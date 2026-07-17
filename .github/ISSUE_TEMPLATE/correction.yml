@@ -1,0 +1,57 @@
+name: Report a correction
+description: Report an error in a published article
+title: "[CORRECTION] <article slug>"
+labels: ["correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For errors in an article NAGJ has already published.
+
+        Published articles are not silently edited — a correction is recorded in
+        the open, like everything else here. See
+        [publication ethics](https://github.com/NorthAmericanGeoGebraJournal/editorial/blob/main/policies/publication-ethics.md).
+
+  - type: input
+    id: article
+    attributes:
+      label: Article
+      description: The URL or slug of the published article.
+      placeholder: https://geogebrajournal.com/articles/guncaga2012geogebra/
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: What is wrong?
+      description: Be specific — quote the passage, name the figure, give the page.
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: What should it say?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Does this change the article's conclusions?
+      options:
+        - "No — a typo, a broken link, a wrong reference"
+        - "Possibly — a mathematical or factual error"
+        - "Yes — the conclusions do not hold"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: reporter
+    attributes:
+      label: Your relationship to the article (optional)
+      placeholder: author / reader / reviewer
+    validations:
+      required: false

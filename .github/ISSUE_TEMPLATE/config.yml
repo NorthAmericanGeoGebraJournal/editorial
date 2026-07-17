@@ -1,0 +1,19 @@
+# Force submissions through the form: a blank issue skips the author checklist
+# and the open-review consent, which are the two things we cannot do without.
+blank_issues_enabled: false
+contact_links:
+  - name: Read the review process first
+    url: https://github.com/NorthAmericanGeoGebraJournal/editorial/blob/main/policies/review-process.md
+    about: How NAGJ review works, and what open review commits you to.
+  - name: Author checklist
+    url: https://github.com/NorthAmericanGeoGebraJournal/editorial/blob/main/checklists/author.md
+    about: Work through this before submitting.
+  - name: Article template
+    url: https://github.com/NorthAmericanGeoGebraJournal/article-template
+    about: Start your manuscript here.
+  - name: The journal
+    url: https://geogebrajournal.com
+    about: Published articles and the archive.
+  - name: A question, not a submission
+    url: https://github.com/NorthAmericanGeoGebraJournal/editorial/discussions
+    about: Ask the editors anything. No checklist required.

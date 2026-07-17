@@ -1,0 +1,183 @@
+name: Submit a manuscript
+description: Submit work to the North American GeoGebra Journal
+title: "[SUBMISSION] <paper title>"
+labels: ["submission", "pre-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for submitting to NAGJ. There are no fees, at any stage.
+
+        **Before you start:** work through the
+        [author checklist](https://github.com/NorthAmericanGeoGebraJournal/editorial/blob/main/checklists/author.md).
+        This form asks you to confirm it.
+
+        **This issue is public and permanent.** Review happens here, in the open,
+        with named reviewers — and the thread stays public whether the paper is
+        accepted or not. See
+        [the review process](https://github.com/NorthAmericanGeoGebraJournal/editorial/blob/main/policies/review-process.md).
+
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      placeholder: The full title of your manuscript
+    validations:
+      required: true
+
+  - type: textarea
+    id: authors
+    attributes:
+      label: Authors
+      description: One per line — name, affiliation, and ORCID if you have one. Mark the corresponding author.
+      placeholder: |
+        Jane Doe, University of Somewhere, 0000-0002-1234-5678 (corresponding)
+        John Roe, Another University
+    validations:
+      required: true
+
+  - type: input
+    id: corresponding_github
+    attributes:
+      label: Corresponding author's GitHub username
+      description: Who the editor and reviewers will talk to in this thread.
+      placeholder: "@janedoe"
+    validations:
+      required: true
+
+  - type: textarea
+    id: abstract
+    attributes:
+      label: Abstract
+    validations:
+      required: true
+
+  - type: input
+    id: keywords
+    attributes:
+      label: Keywords
+      placeholder: dynamic geometry, transformations, teacher education
+    validations:
+      required: true
+
+  - type: dropdown
+    id: article_type
+    attributes:
+      label: Article type
+      options:
+        - Research Article
+        - Teaching Note
+        - Classroom Activity
+        - Technical Note
+        - Proceedings Article
+    validations:
+      required: true
+
+  - type: input
+    id: manuscript
+    attributes:
+      label: Manuscript repository
+      description: Public repo holding your paper.md and figures. If you cannot use a repository, say so in Notes below and we will sort something out.
+      placeholder: https://github.com/janedoe/my-geogebra-paper
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ### GeoGebra resource — optional
+
+        A resource is **encouraged but not required**. A paper that gives the
+        construction commands, or figures a reader can follow, is complete
+        without one.
+
+        NAGJ does **not host applets**. If you have one, you keep it — normally
+        on geogebra.org — and we record its permanent URL.
+
+  - type: input
+    id: geogebra
+    attributes:
+      label: GeoGebra resource URL
+      description: Leave blank if there isn't one. That is a perfectly normal answer.
+      placeholder: https://www.geogebra.org/m/xxxxxxxx
+    validations:
+      required: false
+
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: How can a reader recreate what you describe?
+      description: At least one of these must be true. This is the question reviewers care about most.
+      multiple: true
+      options:
+        - A linked GeoGebra resource
+        - Construction commands given in the paper
+        - Figures and a described procedure a reader can follow
+    validations:
+      required: true
+
+  - type: textarea
+    id: conflicts
+    attributes:
+      label: Conflicts of interest
+      description: Anyone who should not review this, and why. Write "None" if there are none.
+      placeholder: None
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_reviewers
+    attributes:
+      label: Suggested reviewers (optional)
+      description: Names or GitHub usernames. The editor is not bound by these.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: author_checklist
+    attributes:
+      label: Author checklist
+      description: Confirm each — see the [author checklist](https://github.com/NorthAmericanGeoGebraJournal/editorial/blob/main/checklists/author.md) for what these mean.
+      options:
+        - label: The work concerns GeoGebra in mathematics education (K–16)
+          required: true
+        - label: It is original, unpublished, and not under review elsewhere
+          required: true
+        - label: All named authors agree to this submission
+          required: true
+        - label: I hold the rights to all included material, and third-party material is credited
+          required: true
+        - label: A reader could recreate what the paper describes
+          required: true
+        - label: Any GeoGebra resource is public, permanent, and will stay available
+          required: true
+        - label: Conflicts of interest are declared above
+          required: true
+        - label: I agree to publication under CC BY 4.0
+          required: true
+
+  - type: checkboxes
+    id: open_review_consent
+    attributes:
+      label: Open review
+      description: Please read these rather than ticking through.
+      options:
+        - label: I understand review happens in this public issue, with named reviewers
+          required: true
+        - label: I understand this thread is permanent and citable, and stays public whether the paper is accepted or rejected
+          required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes for the editor (optional)
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        An editor will check scope and conflicts, then assign reviewers. You will
+        hear from a person in this thread — nothing below is automated.
