@@ -5,63 +5,122 @@
 %% body, bio, app. Pandoc replaces all of that: the manuscript is one paper.md,
 %% and its converted body lands at the body marker below. Only the style carries.
 %%
+%% Robustness: this template must compile in a MINIMAL TeX Live (the CI image
+%% pandoc/latex). Core packages are loaded normally; everything else is guarded
+%% with \IfFileExists so a package the image lacks is skipped, never fatal. An
+%% author who needs a guarded package (e.g. TikZ) can add it via paper.md's
+%% header-includes and, if CI lacks it, the build installs it.
+%%
 %% WARNING: Pandoc expands its variable delimiter (the dollar sign) everywhere
 %% in this file, including inside comments -- it does not treat percent-lines as
-%% comments. Never write a bare delimiter in a comment here; double it to escape.
-%%
-%% Journal-assigned values (volume, issue, firstpage) arrive as -M metadata at
-%% build time and default to placeholders during author self-builds.
+%% comments. Never write a bare delimiter in a comment here.
 
 \documentclass[12pt]{article}
 
-\usepackage{times}
+%% --- Core: required by Pandoc's own output and by the NAGJ style. These are
+%% present in pandoc/latex; loading them plainly. -------------------------
 \usepackage{amsfonts,amsmath,amssymb,amsthm}
-\usepackage{latexsym}
 \usepackage[a4paper]{geometry}
 \usepackage{fancyhdr}
-\usepackage{placeins}
 \usepackage{xcolor}
 \usepackage{graphicx}
-\usepackage{tabularx,array,booktabs}
+\usepackage{array}
+\usepackage{longtable,booktabs}
 \usepackage[labelfont=bf,labelsep=period,skip=5pt]{caption}
-\usepackage{subcaption}
-\usepackage{float}
-\usepackage{pgf,tikz}
-\usepackage{mathrsfs}
-\usetikzlibrary{arrows}
-\usepackage{pgfplots}
-\pgfplotsset{width=7cm,compat=1.10}
-\usepackage{outlines}
-\usepackage{enumitem}
-\usepackage{titlesec}
-\usepackage{framed}
 \usepackage[colorlinks,allcolors=black]{hyperref}
 
-%% Pandoc emits \tightlist; some documents also need \passthrough. Provide them
-%% so a manuscript that triggers either still builds.
+%% Pandoc emits these; with a custom template we must define them ourselves or a
+%% document that triggers one fails with "Undefined control sequence".
 \providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\pandocbounded}[1]{#1}
 \providecommand{\passthrough}[1]{#1}
+\providecommand{\real}[1]{#1}
 $if(highlighting-macros)$
 $highlighting-macros$
 $endif$
 
-%% Author-supplied preamble (paper.md: header-includes), for the rare package a
-%% manuscript genuinely needs. Reviewers see anything added here.
+%% Bibliography (citeproc). When --citeproc runs, Pandoc emits a CSLReferences
+%% list plus \citeproc/\bibitem commands; a custom template must define them or
+%% the bibliography fails ("CSLReferences undefined" / "Lonely \item"). This is
+%% the canonical block from pandoc's own common.latex partial (do not hand-edit;
+%% re-extract with: pandoc --print-default-data-file templates/common.latex).
+%% The \section*{References} heading is added at the "References" title below.
+$if(csl-refs)$
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ \let\@cite@ofmt\@firstofone
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2]% #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+$endif$
+
+%% --- Font. The build uses xelatex, so use fontspec with a Times-compatible
+%% face. The old `times` package has NO Unicode/TU shapes and silently breaks
+%% small caps under xelatex -- which is why headings must not rely on it. TeX
+%% Gyre Termes is the modern Times clone with real small caps AND bold small
+%% caps; if absent, the engine default (Latin Modern) also has them under TU.
+\usepackage{fontspec}
+\IfFontExistsTF{TeX Gyre Termes}{\setmainfont{TeX Gyre Termes}}{}
+
+%% --- Optional: loaded only if the TeX install has them. ------------------
+\IfFileExists{titlesec.sty}{\usepackage{titlesec}}{}
+\IfFileExists{enumitem.sty}{\usepackage{enumitem}}{}
+\IfFileExists{float.sty}{\usepackage{float}}{}
+\IfFileExists{placeins.sty}{\usepackage{placeins}}{}
+%% outlines: the NAGJ list syntax -- \begin{outline} \1 \2 ... The build
+%% installs it (see build.yml), so authors can use \begin{outline} directly.
+\IfFileExists{outlines.sty}{\usepackage{outlines}}{}
+\IfFileExists{subcaption.sty}{\usepackage{subcaption}}{}
+\IfFileExists{mathrsfs.sty}{\usepackage{mathrsfs}}{}
+\IfFileExists{framed.sty}{\usepackage{framed}}{}
+
+%% Author preamble (paper.md: header-includes) -- for the rare package a
+%% manuscript genuinely needs (e.g. tikz, pgfplots). Reviewers see it.
 $for(header-includes)$
 $header-includes$
 $endfor$
 
-%% --- NAGJ list and section styling (from configs.tex) --------------------
-\setenumerate[1]{label=\arabic*.}
-\setenumerate[2]{label=(\alph*).}
-\setenumerate[3]{label=\roman*.}
-\setenumerate[4]{label=\alph*.}
+%% --- NAGJ list styling (only if enumitem loaded) ------------------------
+\makeatletter
+\@ifpackageloaded{enumitem}{%
+  \setenumerate[1]{label=\arabic*.}%
+  \setenumerate[2]{label=(\alph*).}%
+  \setenumerate[3]{label=\roman*.}%
+  \setenumerate[4]{label=\alph*.}%
+}{}
 
-\titleformat{\section}[block]{\normalsize\scshape\bfseries}{\thesection}{1em}{}
-\titleformat*{\subsection}{\normalsize\scshape\itshape\bfseries}
-\titleformat*{\subsubsection}{\small\scshape\itshape}
+%% --- NAGJ section styling (only if titlesec loaded; plain sections otherwise)
+\@ifpackageloaded{titlesec}{%
+  \titleformat{\section}[block]{\normalsize\scshape\bfseries}{\thesection}{1em}{}%
+  \titleformat*{\subsection}{\normalsize\scshape\itshape\bfseries}%
+  \titleformat*{\subsubsection}{\small\scshape\itshape}%
+}{}
+\makeatother
 
-%% --- NAGJ theorem environments (from configs.tex) ------------------------
+%% --- NAGJ theorem environments (from configs.tex) -----------------------
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
@@ -72,11 +131,10 @@ $endfor$
 \newtheorem{conjecture}[theorem]{Conjecture}
 \newtheorem{question}[theorem]{Question}
 
-%% --- Page geometry, running head, footer (from configs.tex) --------------
+%% --- Page geometry, running head, footer (from configs.tex) -------------
 \geometry{left=2cm,right=2cm,top=3cm,bottom=3cm}
 \setlength{\headheight}{14pt}
 
-%% Journal metadata, with placeholders for author self-builds.
 \newcommand{\nagjvolume}{$if(volume)$$volume$$else$--$endif$}
 \newcommand{\nagjissue}{$if(issue)$$issue$$else$--$endif$}
 \newcommand{\nagjissn}{$if(issn)$$issn$$else$2162-3856$endif$}
@@ -90,9 +148,8 @@ $if(firstpage)$\setcounter{page}{$firstpage$}$endif$
 
 \newcommand*{\TitleFont}{\usefont{\encodingdefault}{\rmdefault}{}{n}\fontsize{16}{18}\selectfont}
 \def\authorfont{\normalfont\fontsize{12}{14}\selectfont\centering}
-\def\subauthorfont{\normalfont\fontsize{10}{12}\selectfont\centering}
 
-\title{\TitleFont{$title$}}
+\title{\TitleFont\scshape $title$}
 \author{%
 $for(authors)$\authorfont $authors.name$$if(authors.affiliation)$\thanks{$authors.affiliation$}$endif$$sep$ \and $endfor$
 }
@@ -108,11 +165,12 @@ $if(abstract)$
 \begin{center}
 \begin{minipage}{0.85\textwidth}
 \small
-\noindent\textbf{Abstract:} $abstract$
+\begin{center}\textbf{Abstract}\end{center}
+{\itshape $abstract$\par}
 $if(keywords)$
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} $for(keywords)$$keywords$$sep$, $endfor$
+\noindent\textbf{Keywords}: $for(keywords)$$keywords$$sep$, $endfor$
 $endif$
 \end{minipage}
 \end{center}
