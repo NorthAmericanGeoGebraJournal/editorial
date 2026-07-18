@@ -113,9 +113,11 @@ $endfor$
 }{}
 
 %% --- NAGJ section styling (only if titlesec loaded; plain sections otherwise)
+%% Small-caps headings. Termes has no bold small-caps face, so these are
+%% (non-bold) small caps -- \scshape\bfseries would silently drop to bold roman.
 \@ifpackageloaded{titlesec}{%
-  \titleformat{\section}[block]{\normalsize\scshape\bfseries}{\thesection}{1em}{}%
-  \titleformat*{\subsection}{\normalsize\scshape\itshape\bfseries}%
+  \titleformat{\section}[block]{\normalsize\scshape}{\thesection}{1em}{}%
+  \titleformat*{\subsection}{\normalsize\scshape\itshape}%
   \titleformat*{\subsubsection}{\small\scshape\itshape}%
 }{}
 \makeatother
@@ -146,24 +148,37 @@ $if(firstpage)$\setcounter{page}{$firstpage$}$endif$
 \, Volume \nagjvolume, Number \nagjissue, ISSN \nagjissn}
 \cfoot{\thepage}
 
-\newcommand*{\TitleFont}{\usefont{\encodingdefault}{\rmdefault}{}{n}\fontsize{16}{18}\selectfont}
-\def\authorfont{\normalfont\fontsize{12}{14}\selectfont\centering}
-
-\title{\TitleFont\scshape $title$}
-\author{%
-$for(authors)$\authorfont $authors.name$$if(authors.affiliation)$\thanks{$authors.affiliation$}$endif$$sep$ \and $endfor$
-}
-\date{}
+%% Title block sizes (from configs.tex, trimmed slightly). Uppercase roman
+%% title, numbered affiliations listed beneath the authors -- the NAGJ form.
+\newcommand*{\TitleFont}{\usefont{\encodingdefault}{\rmdefault}{}{n}\fontsize{15}{18}\selectfont}
+\def\authorfont{\normalfont\fontsize{11}{13}\selectfont}
+\def\subauthorfont{\normalfont\fontsize{9.5}{11}\selectfont}
+\definecolor{nagjabs}{rgb}{0.251,0.541,0.729} %% the abstract-rule blue
+\newcounter{nagjaff}
 
 \begin{document}
 \interfootnotelinepenalty=100000
 
-\maketitle
+%% --- NAGJ title block ----------------------------------------------------
+\begin{center}
+{\TitleFont\MakeUppercase{$title$}\par}
+\vspace{1.1em}
+{\authorfont
+\setcounter{nagjaff}{0}%
+$for(authors)$$authors.name$$if(authors.affiliation)$\textsuperscript{\stepcounter{nagjaff}\thenagjaff}$endif$$sep$ and $endfor$\par}
+\vspace{0.4em}
+{\subauthorfont
+\setcounter{nagjaff}{0}%
+$for(authors)$$if(authors.affiliation)$\stepcounter{nagjaff}\textsuperscript{\thenagjaff}$authors.affiliation$\par$endif$$endfor$}
+\end{center}
 \thispagestyle{fancy}
 
 $if(abstract)$
+\vspace{1em}
+\noindent\textcolor{nagjabs}{\rule{\linewidth}{0.6pt}}
+\vspace{0.4em}
 \begin{center}
-\begin{minipage}{0.85\textwidth}
+\begin{minipage}{0.9\textwidth}
 \small
 \begin{center}\textbf{Abstract}\end{center}
 {\itshape $abstract$\par}
@@ -174,6 +189,8 @@ $if(keywords)$
 $endif$
 \end{minipage}
 \end{center}
+\vspace{0.4em}
+\noindent\textcolor{nagjabs}{\rule{\linewidth}{0.6pt}}
 \vspace{1em}
 $endif$
 
