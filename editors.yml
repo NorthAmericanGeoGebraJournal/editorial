@@ -1,0 +1,13 @@
+# NAGJ editorial board -- GitHub usernames.
+#
+# @nagjbot's privileged commands (accept, publish, create-review, assign) run
+# ONLY for people listed here. Informational commands (check, build, help) are
+# open to anyone with repo write access (see the `if:` guard in
+# .github/workflows/nagjbot.yml).
+#
+# Add or remove editors by editing this list and committing. The change is
+# public and version-controlled -- that is the audit trail.
+
+editors:
+  - jamesquinlan        # James Quinlan -- Editor (University of Southern Maine)
+  # - add-username-here # Michael Todd Edwards -- Founder & Executive Editor

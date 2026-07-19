@@ -1,0 +1,126 @@
+# @nagjbot -- the editorial bot.
+#
+# Runs when an EDITOR comments `@nagjbot <command>` on a submission issue. It
+# validates and reports; it never makes editorial judgements. The handler is
+# scripts/nagjbot.py (testable on its own); this workflow just wires it to
+# GitHub: parse the command, run it, post the result back as a comment.
+
+name: nagjbot
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  command:
+    # Only real comments (not PR comments), only when @nagjbot is addressed, and
+    # only from editors. author_association is OWNER/MEMBER/COLLABORATOR for
+    # people with write access -- a random commenter is CONTRIBUTOR/NONE and is
+    # ignored, so nobody outside the team can drive the bot.
+    if: >
+      github.event.issue.pull_request == null &&
+      contains(github.event.comment.body, '@nagjbot') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --quiet pyyaml
+
+      - name: Parse the command
+        id: parse
+        env:
+          COMMENT: ${{ github.event.comment.body }}
+        run: |
+          # The word after @nagjbot is the command; default to "help".
+          cmd=$(printf '%s' "$COMMENT" | grep -oiE '@nagjbot[[:space:]]+[a-z-]+' | head -1 | awk '{print $2}')
+          echo "command=${cmd:-help}" >> "$GITHUB_OUTPUT"
+
+      - name: Run the command
+        id: run
+        env:
+          BODY: ${{ github.event.issue.body }}
+          ACTOR: ${{ github.event.comment.user.login }}
+          ASSOCIATION: ${{ github.event.comment.author_association }}
+        run: |
+          printf '%s' "$BODY" > issue-body.md
+          if ! python scripts/nagjbot.py "${{ steps.parse.outputs.command }}" \
+                 --body-file issue-body.md \
+                 --actor "$ACTOR" > report.md 2>run-error.log; then
+            {
+              echo ":x: \`@nagjbot ${{ steps.parse.outputs.command }}\` hit an internal error."
+              echo
+              echo "An editor should check the workflow logs."
+            } > report.md
+          fi
+
+      # build and accept produce a PDF. Both clone the manuscript and run the
+      # two-stage build (pandoc convert -> full TeX Live compile) using THIS
+      # repo's template/CSL/filter. Gated on authorization so a non-editor's
+      # `accept` (already refused above) does not still build.
+      - name: Build the manuscript PDF
+        id: build
+        if: steps.parse.outputs.command == 'build' || steps.parse.outputs.command == 'accept'
+        env:
+          ACTOR: ${{ github.event.comment.user.login }}
+        run: |
+          if ! python scripts/nagjbot.py "${{ steps.parse.outputs.command }}" --actor "$ACTOR" --authz-only; then
+            echo "not authorized to build; skipping"; exit 0
+          fi
+          url=$(python scripts/nagjbot.py repo-url --body-file issue-body.md)
+          if [ -z "$url" ]; then echo "no manuscript URL; skipping build"; exit 0; fi
+
+          rm -rf manuscript
+          if ! git clone --depth 1 --quiet "$url" manuscript; then
+            printf '\n\n:x: Could not clone `%s` to build the PDF.\n' "$url" >> report.md
+            exit 0
+          fi
+
+          # Stage 1: pandoc converts (working dir = manuscript, so figure paths
+          # resolve; template/CSL/filter referenced by absolute /data path).
+          docker run --rm -v "$PWD:/data" -w /data/manuscript pandoc/latex:3.5-ubuntu \
+            paper.md \
+            --template=/data/templates/nagj.latex \
+            --lua-filter=/data/filters/lists-to-outline.lua \
+            --resource-path=".:figures" \
+            --citeproc --csl=/data/templates/nagj.csl \
+            --metadata=issn:2162-3856 \
+            -t latex -o paper.tex
+
+          # Stage 2: full TeX Live compiles.
+          docker run --rm -v "$PWD:/data" -w /data/manuscript texlive/texlive:latest sh -c '
+            xelatex -interaction=nonstopmode paper.tex >/dev/null 2>&1 || true
+            xelatex -interaction=nonstopmode -halt-on-error paper.tex
+          '
+
+          mkdir -p out
+          if [ -f manuscript/paper.pdf ]; then
+            mv -f manuscript/paper.pdf out/paper.pdf
+            run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            printf '\n\n:page_facing_up: **PDF built.** Download it from this run: [artifacts](%s) (see **paper**).\n' "$run_url" >> report.md
+          else
+            printf '\n\n:x: The PDF did not compile. See the workflow logs; the intermediate `.tex` is in the artifact.\n' >> report.md
+            cp -f manuscript/paper.tex out/paper.tex 2>/dev/null || true
+          fi
+
+      - name: Upload PDF artifact
+        if: steps.parse.outputs.command == 'build' || steps.parse.outputs.command == 'accept'
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper
+          path: out/
+          if-no-files-found: ignore
+
+      - name: Post the result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file report.md
